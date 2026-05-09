@@ -1,6 +1,6 @@
+from abc import ABC
 from datetime import date, time
 from enum import Enum
-
 from salas import Sala
 from usuarios import Usuario
 
@@ -122,3 +122,4 @@ class Reserva:
 
         #adicionar observer
         self._data = data
+
