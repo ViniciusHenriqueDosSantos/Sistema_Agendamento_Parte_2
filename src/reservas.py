@@ -1,5 +1,6 @@
 from datetime import date, time
 from enum import Enum
+from notificacoes import NotificadorReservas, ObserverUsuario
 from salas import Sala
 from usuarios import Usuario
 
@@ -28,6 +29,8 @@ class Reserva:
     """
 
     proximo_id = 1
+    EVENTO_ALTERADA = "Reserva alterada"
+    EVENTO_CANCELADA = "Reserva cancelada"
 
     def __init__(self, sala: Sala, usuario: Usuario, data: date, horario: time):
         """
@@ -46,6 +49,8 @@ class Reserva:
         self._data = data
         self._horario = horario
         self._status = StatusReserva.ATIVA
+        self._notificador = NotificadorReservas()
+        self._notificador.adicionar_observador(ObserverUsuario(usuario))
 
         Reserva.proximo_id += 1
 
@@ -108,14 +113,21 @@ class Reserva:
         """
         return self._status
 
+    def adicionar_observador(self, observer):
+        """Adiciona um observador interessado nas mudanças desta reserva"""
+        self._notificador.adicionar_observador(observer)
+
+    def remover_observador(self, observer):
+        """Remove um observador desta reserva"""
+        self._notificador.remover_observador(observer)
+
     def cancelar_reserva(self):
         """
         Cancela a reserva.
-
-        Futuramente deverá notificar os observadores.
         """
 
         self._status = StatusReserva.CANCELADA
+        self._notificar(Reserva.EVENTO_CANCELADA)
 
     def set_usuario(self, usuario: Usuario):
         """
@@ -125,8 +137,9 @@ class Reserva:
             usuario (Usuario): Novo usuário.
         """
 
-        #adicionar observer
         self._usuario = usuario
+        self._notificador.adicionar_observador(ObserverUsuario(usuario))
+        self._notificar(Reserva.EVENTO_ALTERADA)
 
     def set_sala(self, sala: Sala):
         """
@@ -136,8 +149,8 @@ class Reserva:
             sala (Sala): Nova sala.
         """
 
-        #adicionar observer
         self._sala = sala
+        self._notificar(Reserva.EVENTO_ALTERADA)
 
     def set_horario(self, horario: time):
         """
@@ -147,8 +160,8 @@ class Reserva:
             horario (time): Novo horário.
         """
 
-        #adicionar observer
         self._horario = horario
+        self._notificar(Reserva.EVENTO_ALTERADA)
 
     def set_data(self, data: date):
         """
@@ -158,8 +171,11 @@ class Reserva:
             data (date): Nova data.
         """
 
-        #adicionar observer
         self._data = data
+        self._notificar(Reserva.EVENTO_ALTERADA)
+
+    def _notificar(self, evento):
+        self._notificador.notificar(evento, self)
     
     def __str__(self) -> str:
         """
@@ -180,4 +196,3 @@ class Reserva:
             f"Hora {self._horario} | "
             f"Status {self._status.value}"
         )
-
