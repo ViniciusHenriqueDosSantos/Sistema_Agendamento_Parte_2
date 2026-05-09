@@ -1,7 +1,6 @@
 import threading
 from datetime import time, timedelta
 
-
 class RepositorioReservas:
     _instance = None
     _lock = threading.Lock() # evitar problemas de concorrência
@@ -92,9 +91,8 @@ class RepositorioReservas:
         return True
 
     def listar_salas_disponiveis(self, data_inicio, data_fim, horario):
-    	if (data_inicio > data_fim):
-    		return {}
-
+        if (data_inicio > data_fim):
+            return {}
         salas_disponiveis = {}
         data_atual = data_inicio
 
@@ -110,8 +108,8 @@ class RepositorioReservas:
         return salas_disponiveis
 
     def listar_horarios_disponiveis_por_periodo(self, data_inicio, data_fim):
-    	if (data_inicio > data_fim):
-    		return {}
+        if (data_inicio > data_fim):
+            return {}
 
         disponibilidade = {}
         data_atual = data_inicio
