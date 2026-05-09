@@ -32,15 +32,6 @@ class Sala(ABC):
 
         Sala.proximo_id += 1
 
-    def get_id(self) -> int:
-        """
-        Retorna o identificador da sala.
-
-        Returns:
-            int: ID da sala.
-        """
-        return self._id
-
     def get_andar(self) -> int:
         """
         Retorna o andar da sala.

@@ -122,4 +122,23 @@ class Reserva:
 
         #adicionar observer
         self._data = data
+    
+    def __str__(self) -> str:
+        """
+        Retorna uma representação textual dareserva.
+
+        Returns:
+            str: Informações formatadas da reserva.
+        """
+
+        return (
+            f"{self._id} | "
+            f"Sala {self._sala.get_numero} | "
+            f"Tipo da Sala {self._sala.tipo} | "
+            f"Andar {self._sala.get_andar} | "
+            f"Usuario {self._usuario.get_nome} | "
+            f"Tipo Usuario {self._usuario.tipo} | "
+            f"Data {self._data} | "
+            f"Hora {self._horario}"
+        )
 
