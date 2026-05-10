@@ -15,7 +15,7 @@ class RelatorioDiario:
         reservas_confirmadas = []
 
         for reserva in reservas:
-            if not self._reserva_esta_cancelada(reserva):
+            if self._reserva_esta_confirmada(reserva):
                 reservas_confirmadas.append(reserva)
 
         if not reservas_confirmadas:
@@ -59,8 +59,8 @@ class RelatorioDiario:
 
         return "\n".join(linhas)
 
-    def _reserva_esta_cancelada(self, reserva):
+    def _reserva_esta_confirmada(self, reserva):
         status = getattr(reserva, "_status", None)
         valor_status = getattr(status, "value", status)
 
-        return valor_status == "Cancelada"
+        return valor_status == "Confirmada"
