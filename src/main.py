@@ -3,8 +3,9 @@ from datetime import datetime
 from dados import RepositorioReservas
 from salas import SalaFactory
 from usuarios import UsuarioFactory
-from politicas import ProxyReserva
+from politicas import ProxyReserva, DecoratorLimpeza, PrimeiraReserva
 from relatorios import RelatorioDiario
+
 
 repositorio = RepositorioReservas()
 proxy = ProxyReserva()
@@ -20,6 +21,7 @@ def menu():
     print("7 - Modificar reserva")
     print("8 - Cancelar reserva")
     print("9 - Relatório diário")
+    print("10 - Cadastrar Limpeza")
     print("0 - Sair")
 
 
@@ -177,7 +179,39 @@ def criar_reserva():
     except ValueError as erro:
         print(f"Erro: {erro}")
 
-#verificar
+def criar_reserva_limpeza():
+    listar_salas()
+
+    sala_id = int(input("\nID da sala: "))
+    sala = repositorio.buscar_sala_por_id(sala_id)
+
+    if sala is None:
+        print("Sala não encontrada.")
+        return
+
+    usuario = DecoratorLimpeza.user_limpeza
+    decorator = DecoratorLimpeza(PrimeiraReserva())
+    data = input("Data (AAAA-MM-DD): ")
+    horario = input("Horário (HH:MM): ")
+
+    data = datetime.strptime(data, "%Y-%m-%d").date()
+    horario = datetime.strptime(horario,"%H:%M").time()
+
+    try:
+        reserva = decorator.nova_reserva(sala, usuario, data, horario)
+
+        if reserva is None:
+            print("Reserva não foi criada.")
+            return
+
+        if (reserva not in repositorio.listar_reservas()):
+            repositorio.adicionar_reserva(reserva)
+
+        print("Reserva criada.")
+
+    except ValueError as erro:
+        print(f"Erro: {erro}")
+
 def modificar_reserva():
     reservas = repositorio.listar_reservas()
 
@@ -300,6 +334,9 @@ def executar():
 
         elif opcao == "9":
             gerar_relatorio_diario()
+
+        elif opcao == "10":
+            criar_reserva_limpeza()
 
         elif opcao == "0":
             print("Sistema encerrado.")

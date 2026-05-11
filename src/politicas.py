@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date, time, datetime
 
 from salas import Sala
-from usuarios import Usuario, Professor
+from usuarios import Usuario, Professor, UsuarioFactory
 from reservas import Reserva
 from dados import RepositorioReservas
 
@@ -139,3 +139,26 @@ class GetReserva:
 
         repositorio = RepositorioReservas()
         return repositorio.buscar_reserva_por_sala_data_horario(sala, data, horario)
+    
+#Decorator
+class DecoratorLimpeza(StrategyReserva):
+    """
+    Decorator que envolve outra `StrategyReserva` e cria reservas em nome
+    de um usuário fixo de limpeza (`Manutenção` - "Limpeza").
+
+    """
+
+    user_limpeza = UsuarioFactory.create("Manutenção", "Limpeza")
+
+    def __init__(self, usuario: StrategyReserva):
+        self._strategy = usuario
+
+    def nova_reserva(self, sala: Sala, usuario: Usuario, data: date, horario: time) -> Reserva | None:
+
+        if data < date.today() or (data == date.today() and horario <= datetime.now().time()):
+            raise ValueError("Data e hora inválidos")
+
+        if horario.hour < 8 or horario.hour > 17 or horario.minute != 0:
+            raise ValueError("Horário inválido")
+        
+        return self._strategy.nova_reserva(sala, usuario , data, horario)

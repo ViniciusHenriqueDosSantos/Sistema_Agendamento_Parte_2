@@ -108,6 +108,7 @@ O menu interativo permite cadastrar salas e usuários, criar/modificar/cancelar 
 7 - Gerar relatório diário
 8 - Listar salas
 9 - Listar usuários
+10 - Cadastrar Limpeza
 0 - Sair
 ```
 
