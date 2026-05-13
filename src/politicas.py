@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import date, time, datetime
+from datetime import date, time, datetime, timedelta
 
 from salas import Sala
 from usuarios import Usuario, Professor, UsuarioFactory
@@ -146,3 +146,38 @@ class DecoratorLimpeza(StrategyReserva):
             raise ValueError("Data e hora já estão ocupados")
 
         return self._strategy.nova_reserva(sala, self.user_limpeza, data, horario)
+    
+
+#Facade
+
+class FacadeRecorrencia():
+
+    def criar_recorencia(self, sala: Sala, usuario: Usuario, data_inicial: date, data_final: date, horario: time, dias_escolhidos: list[int]):
+        
+        repositorio = RepositorioReservas()
+        proxy = ProxyReserva(PrimeiraReserva())
+        data = data_inicial
+
+        while data <= data_final:
+            if data.weekday in dias_escolhidos:
+                if isinstance(usuario, Professor):
+                    proxy.alterar_strategy(PrioridadeProfessor())
+                else:
+                    proxy.alterar_strategy(PrimeiraReserva())
+
+                try:
+                    reserva = proxy.criar_reserva(sala, usuario, data, horario)
+
+                    if reserva is None:
+                        print("Reserva não foi criada.")
+                        return
+
+                    if (reserva not in repositorio.listar_reservas()):
+                        repositorio.adicionar_reserva(reserva)
+
+                    print("Reserva criada.")
+
+                except ValueError as erro:
+                    print(f"Erro: Não foi possível reservar na data: {data} ")
+
+            data += timedelta(days=1)
