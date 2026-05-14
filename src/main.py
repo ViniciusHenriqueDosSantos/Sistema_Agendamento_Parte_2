@@ -200,7 +200,7 @@ def criar_reserva():
             for d in frequencia.split(",")
         ]
        
-        FacadeRecorrencia.criar_recorencia(sala, usuario, data_inicial, data_final, horario, dias_escolhidos)
+        FacadeRecorrencia().criar_recorencia(sala, usuario, data_inicial, data_final, horario, dias_escolhidos)
     
     else:
         data = input("Data (AAAA-MM-DD): ")

@@ -159,7 +159,7 @@ class FacadeRecorrencia():
         data = data_inicial
 
         while data <= data_final:
-            if data.weekday in dias_escolhidos:
+            if data.weekday() in dias_escolhidos:
                 if isinstance(usuario, Professor):
                     proxy.alterar_strategy(PrioridadeProfessor())
                 else:
@@ -169,15 +169,16 @@ class FacadeRecorrencia():
                     reserva = proxy.criar_reserva(sala, usuario, data, horario)
 
                     if reserva is None:
-                        print("Reserva não foi criada.")
-                        return
+                        print(f"Não foi possível reservar na data: {data}")
+                        data += timedelta(days=1)
+                        continue
 
                     if (reserva not in repositorio.listar_reservas()):
                         repositorio.adicionar_reserva(reserva)
-
-                    print("Reserva criada.")
 
                 except ValueError as erro:
                     print(f"Erro: Não foi possível reservar na data: {data} ")
 
             data += timedelta(days=1)
+        
+        print("Criação de recorrência fializada!")
