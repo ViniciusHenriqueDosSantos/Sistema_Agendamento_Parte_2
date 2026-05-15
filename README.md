@@ -7,7 +7,7 @@ Sistema de agendamento de salas para uma instituição, permitindo cadastrar sal
 
 - Cadastro de salas
 - Cadastro de usuários
-- Criação de reservas
+- Criação de reservas (única ou recorrente por dias da semana)
 - Cancelamento de reservas
 - Edição de reservas
 - Consulta de disponibilidade
@@ -59,6 +59,7 @@ Sistema de agendamento de salas para uma instituição, permitindo cadastrar sal
 - Singleton
 - Proxy
 - Decorator
+- Facade
 
 
 ## Padrões de Projeto
@@ -69,6 +70,7 @@ Sistema de agendamento de salas para uma instituição, permitindo cadastrar sal
 - `Singleton`: usado em `RepositorioReservas` para manter um repositório único em memória, com controle de concorrência.
 - `Proxy`: usado em `ProxyReserva` para centralizar validações antes da criação de reservas.
 - `Decorator`: usado em `DecoratorLimpeza` para adicionar o comportamento de reserva de limpeza.
+- `Facade`: usado em `FacadeRecorrencia` para simplificar a criação de reservas recorrentes em um intervalo de datas e dias da semana.
 
 
 
@@ -91,7 +93,7 @@ O menu interativo permite cadastrar salas e usuários, criar/modificar/cancelar 
 	- `salas.py` - modelos de salas e factory
 	- `usuarios.py` - modelos de usuários e factory
 	- `reservas.py` - lógica da reserva e notificações
-	- `politicas.py` - strategy, proxy e decorator para criação de reservas
+	- `politicas.py` - strategy, proxy, decorator e facade para criação de reservas
 	- `relatorios.py` - geração de relatórios diários
 	- `notificacoes.py` - mecanismo de observadores/notifications
 
@@ -102,7 +104,7 @@ O menu interativo permite cadastrar salas e usuários, criar/modificar/cancelar 
 
 - Cadastrar usuário: menu → `2` → escolha tipo, nome
 
-- Criar reserva: menu → `6` → informe `ID` da sala, `ID` do usuário, data e horário
+- Criar reserva: menu → `6` → informe `ID` da sala, `ID` do usuário e horário; escolha entre reserva única (informe a data) ou recorrente (informe data inicial, data final e os dias da semana, separados por vírgula, no intervalo `0` Segunda a `6` Domingo)
 
 - Criar reserva de limpeza: menu → `10` → informe `ID` da sala, data e horário
 
@@ -132,6 +134,7 @@ O menu interativo permite cadastrar salas e usuários, criar/modificar/cancelar 
 - As estratégias e regras de prioridade utilizam Strategy e Proxy.
 - O repositório em memória utiliza Singleton com lock para controle básico de concorrência.
 - A reserva de limpeza utiliza Decorator como extensão opcional do projeto.
+- A reserva recorrente utiliza Facade (`FacadeRecorrencia`) para encapsular o loop de datas e a escolha de estratégia em uma única chamada.
 
 
 ## Autores

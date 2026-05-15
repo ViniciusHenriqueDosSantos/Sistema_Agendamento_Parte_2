@@ -10,13 +10,13 @@ Os dados ficam em memoria durante a execucao. Ao encerrar o programa, as salas, 
 
 ## Estrutura principal
 
-```text
+```
 src/
   main.py           Interface de linha de comando e orquestracao dos fluxos.
   salas.py          Modelos de salas e factory de criacao.
   usuarios.py       Modelos de usuarios e factory de criacao.
   reservas.py       Entidade Reserva, status e alteracoes/cancelamentos.
-  politicas.py      Estrategias de reserva, proxy de validacao e decorator.
+  politicas.py      Estrategias de reserva, proxy de validacao, decorator e facade de recorrencia.
   dados.py          Repositorio singleton em memoria.
   notificacoes.py   Contratos e implementacao do Observer.
   relatorios.py     Geracao do relatorio diario.
@@ -68,7 +68,7 @@ Instancia de `RepositorioReservas`. Como essa classe usa Singleton, qualquer out
 - `listar_salas()`: exibe todas as salas cadastradas, incluindo id, numero, andar e tipo.
 - `listar_usuarios()`: exibe todos os usuarios cadastrados, incluindo id, nome e tipo.
 - `listar_salas_disponiveis()`: recebe data inicial e final; chama `listar_horarios_disponiveis_por_periodo()` no repositorio; imprime os horarios livres por sala e data.
-- `criar_reserva()`: recebe sala, usuario, data e horario; escolhe `PrioridadeProfessor` se o usuario for professor, caso contrario usa `PrimeiraReserva`; cria a reserva por meio de `ProxyReserva`.
+- `criar_reserva()`: recebe sala, usuario e horario; pergunta se a reserva e `Única` ou de `Recorrência`. Para reserva unica, recebe a data, escolhe `PrioridadeProfessor` se o usuario for professor (caso contrario usa `PrimeiraReserva`) e cria a reserva por meio de `ProxyReserva`. Para reserva recorrente, recebe data inicial, data final e uma lista de dias da semana (`0` Segunda a `6` Domingo, separados por virgula) e delega para `FacadeRecorrencia.criar_recorencia()`.
 - `criar_reserva_limpeza()`: cria uma reserva de limpeza usando `DecoratorLimpeza` e o usuario fixo de manutencao.
 - `modificar_reserva()`: lista reservas, seleciona uma pelo id e permite alterar horario, data ou sala. A propria classe `Reserva` valida conflitos e regras de prioridade.
 - `cancelar_reserva()`: seleciona uma reserva pelo id e chama `cancelar_reserva()`.
@@ -289,6 +289,18 @@ Decorator usado para criar reserva de limpeza como extensao opcional.
 - `__init__(strategy)`: recebe uma estrategia base.
 - `nova_reserva(sala, usuario, data, horario)`: valida data e horario, impede conflito e delega para a estrategia base usando `user_limpeza`, ignorando o usuario recebido como argumento.
 
+### Classe `FacadeRecorrencia`
+
+Facade que encapsula a criacao de varias reservas em um intervalo de datas, restritas a dias especificos da semana. Funciona como ponto unico de entrada para a funcionalidade de reserva recorrente, escondendo do menu o uso direto de `ProxyReserva`, das estrategias e do repositorio.
+
+Metodos:
+
+- `criar_recorencia(sala, usuario, data_inicial, data_final, horario, dias_escolhidos)`: percorre o intervalo `[data_inicial, data_final]` dia a dia. Em cada data cujo `weekday()` esteja em `dias_escolhidos`, instancia um `ProxyReserva` e seleciona `PrioridadeProfessor` para professores ou `PrimeiraReserva` para os demais usuarios. Cria a reserva pelo proxy e a adiciona ao `RepositorioReservas` quando ainda nao estiver presente. Erros e conflitos sao reportados por data (`Erro: Não foi possível reservar na data: ...`) e o loop continua nas datas seguintes. Ao final, imprime uma mensagem de conclusao.
+
+Parametros:
+
+- `dias_escolhidos`: lista de inteiros de `0` (Segunda) a `6` (Domingo), no formato de `datetime.date.weekday()`.
+
 ## `src/dados.py`
 
 Modulo do repositorio em memoria. Ele usa Singleton para manter uma unica instancia compartilhada por todo o sistema.
@@ -462,11 +474,19 @@ Usado em:
 
 Objetivo: adicionar o comportamento de reserva de limpeza sem alterar as strategies existentes.
 
+### Facade
+
+Usado em:
+
+- `FacadeRecorrencia`
+
+Objetivo: oferecer uma interface unica e simples para criar varias reservas em um intervalo de datas e dias da semana, escondendo do menu a iteracao por datas, a selecao de estrategia e a interacao com o repositorio.
+
 ## Fluxos importantes
 
 ### Criacao de reserva comum
 
-```text
+```
 main.criar_reserva()
   -> busca sala e usuario no RepositorioReservas
   -> escolhe PrimeiraReserva ou PrioridadeProfessor
@@ -476,9 +496,24 @@ main.criar_reserva()
   -> RepositorioReservas.adicionar_reserva()
 ```
 
+### Criacao de reserva recorrente
+
+```
+main.criar_reserva()  (opcao "Recorrência")
+  -> coleta data inicial, data final, horario e dias da semana
+  -> FacadeRecorrencia.criar_recorencia()
+  -> itera dia a dia entre data inicial e data final
+  -> para cada dia cujo weekday esta na lista escolhida:
+       -> ProxyReserva com PrioridadeProfessor (professor) ou PrimeiraReserva (demais)
+       -> StrategyReserva.nova_reserva()
+       -> Reserva(...)
+       -> RepositorioReservas.adicionar_reserva() (se ainda nao presente)
+  -> erros por data sao impressos e o loop segue
+```
+
 ### Alteracao de reserva
 
-```text
+```
 main.modificar_reserva()
   -> RepositorioReservas.buscar_reserva_por_id()
   -> Reserva.set_horario(), Reserva.set_data() ou Reserva.set_sala()
@@ -490,7 +525,7 @@ main.modificar_reserva()
 
 ### Cancelamento de reserva
 
-```text
+```
 main.cancelar_reserva()
   -> RepositorioReservas.buscar_reserva_por_id()
   -> Reserva.cancelar_reserva()
@@ -500,7 +535,7 @@ main.cancelar_reserva()
 
 ### Consulta de disponibilidade
 
-```text
+```
 main.listar_salas_disponiveis()
   -> RepositorioReservas.listar_horarios_disponiveis_por_periodo()
   -> RepositorioReservas.sala_esta_disponivel()
@@ -510,7 +545,7 @@ main.listar_salas_disponiveis()
 
 ### Relatorio diario
 
-```text
+```
 main.gerar_relatorio_diario()
   -> RelatorioDiario.gerar(data)
   -> RepositorioReservas.listar_reservas_por_data(data)
