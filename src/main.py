@@ -3,7 +3,7 @@ from datetime import datetime
 from dados import RepositorioReservas
 from salas import SalaFactory
 from usuarios import UsuarioFactory, Professor
-from politicas import ProxyReserva, DecoratorLimpeza, PrimeiraReserva, PrioridadeProfessor
+from politicas import ProxyReserva, DecoratorLimpeza, PrimeiraReserva, PrioridadeProfessor, FacadeRecorrencia
 from relatorios import RelatorioDiario
 
 
@@ -141,6 +141,7 @@ def listar_salas_disponiveis():
 
 
 def criar_reserva():
+
     proxy = ProxyReserva(PrimeiraReserva())
 
     listar_salas()
@@ -160,31 +161,70 @@ def criar_reserva():
         print("Usuário não encontrado.")
         return
 
-    data = input("Data (AAAA-MM-DD): ")
     horario = input("Horário (HH:MM): ")
-
-    data = datetime.strptime(data, "%Y-%m-%d").date()
     horario = datetime.strptime(horario,"%H:%M").time()
 
-    if isinstance(usuario, Professor):
-        proxy.alterar_strategy(PrioridadeProfessor())
+    print("Opções de reserva:")
+    print("1: Recorrência")
+    print("2: Única")
+    
+    tipos = {
+        "1": "Recorrência",
+        "2": "Única",
+    }
+
+    opcao = input("Escolha o tipo de reserva: ")
+    tipo = tipos.get(opcao)
+    
+
+    if tipo == "Recorrência":
+        data_inicial = input("Data Inicial (AAAA-MM-DD): ")
+        data_inicial = datetime.strptime(data_inicial, "%Y-%m-%d").date()
+
+        data_final = input("Data Final (AAAA-MM-DD): ")
+        data_final = datetime.strptime(data_final, "%Y-%m-%d").date()
+        
+        print("Escolha os dias da semana:")
+        print("0: Segunda")
+        print("1: Terça")
+        print("2: Quarta")
+        print("3: Quinta")
+        print("4: Sexta")
+        print("5: Sábado")
+        print("6: Domingo")
+
+        frequencia = input("\nDigite os números separados por vírgula: ")
+
+        dias_escolhidos = [
+            int(d.strip())
+            for d in frequencia.split(",")
+        ]
+       
+        FacadeRecorrencia().criar_recorencia(sala, usuario, data_inicial, data_final, horario, dias_escolhidos)
+    
     else:
-        proxy.alterar_strategy(PrimeiraReserva())
+        data = input("Data (AAAA-MM-DD): ")
+        data = datetime.strptime(data, "%Y-%m-%d").date()
 
-    try:
-        reserva = proxy.criar_reserva(sala, usuario, data, horario)
+        if isinstance(usuario, Professor):
+            proxy.alterar_strategy(PrioridadeProfessor())
+        else:
+            proxy.alterar_strategy(PrimeiraReserva())
 
-        if reserva is None:
-            print("Reserva não foi criada.")
-            return
+        try:
+            reserva = proxy.criar_reserva(sala, usuario, data, horario)
 
-        if (reserva not in repositorio.listar_reservas()):
-            repositorio.adicionar_reserva(reserva)
+            if reserva is None:
+                print("Reserva não foi criada.")
+                return
 
-        print("Reserva criada.")
+            if (reserva not in repositorio.listar_reservas()):
+                repositorio.adicionar_reserva(reserva)
 
-    except ValueError as erro:
-        print(f"Erro: {erro}")
+            print("Reserva criada.")
+
+        except ValueError as erro:
+            print(f"Erro: {erro}")
 
 def criar_reserva_limpeza():
     listar_salas()
